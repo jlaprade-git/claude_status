@@ -1,0 +1,16 @@
+appId: com.claude-status.app
+productName: Claude Status
+directories:
+  buildResources: resources
+files:
+  - "out/**/*"
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch: [universal]
+linux:
+  target:
+    - target: AppImage
+    - target: deb
+  category: Development

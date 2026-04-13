@@ -1,0 +1,55 @@
+@import './variables.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes status-dot-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.7); }
+}
+
+@keyframes gauge-fill {
+  from { stroke-dashoffset: var(--gauge-circumference); }
+  to { stroke-dashoffset: var(--gauge-offset); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

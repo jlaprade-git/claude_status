@@ -1,0 +1,58 @@
+import type { PricingTier } from '../shared-types/pricing'
+
+export const PRICING_DATA: PricingTier[] = [
+  {
+    model: 'claude-opus-4-6',
+    displayName: 'Claude Opus 4.6',
+    inputTokensPer1M: 15.0,
+    outputTokensPer1M: 75.0,
+    cacheWritePer1M: 18.75,
+    cacheReadPer1M: 1.5,
+    effectiveDate: '2025-05-01',
+  },
+  {
+    model: 'claude-sonnet-4-6',
+    displayName: 'Claude Sonnet 4.6',
+    inputTokensPer1M: 3.0,
+    outputTokensPer1M: 15.0,
+    cacheWritePer1M: 3.75,
+    cacheReadPer1M: 0.3,
+    effectiveDate: '2025-05-01',
+  },
+  {
+    model: 'claude-haiku-4-5-20251001',
+    displayName: 'Claude Haiku 4.5',
+    inputTokensPer1M: 0.80,
+    outputTokensPer1M: 4.0,
+    cacheWritePer1M: 1.0,
+    cacheReadPer1M: 0.08,
+    effectiveDate: '2025-05-01',
+  },
+  {
+    model: 'claude-sonnet-4-5-20250514',
+    displayName: 'Claude Sonnet 4.5',
+    inputTokensPer1M: 3.0,
+    outputTokensPer1M: 15.0,
+    cacheWritePer1M: 3.75,
+    cacheReadPer1M: 0.3,
+    effectiveDate: '2025-05-14',
+  },
+  {
+    model: 'claude-3-5-sonnet-20241022',
+    displayName: 'Claude 3.5 Sonnet',
+    inputTokensPer1M: 3.0,
+    outputTokensPer1M: 15.0,
+    cacheWritePer1M: 3.75,
+    cacheReadPer1M: 0.3,
+    effectiveDate: '2024-10-22',
+  },
+  {
+    model: 'claude-3-5-haiku-20241022',
+    displayName: 'Claude 3.5 Haiku',
+    inputTokensPer1M: 0.80,
+    outputTokensPer1M: 4.0,
+    cacheWritePer1M: 1.0,
+    cacheReadPer1M: 0.08,
+    effectiveDate: '2024-10-22',
+  },
+]

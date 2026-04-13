@@ -1,0 +1,23 @@
+node_modules/
+dist/
+out/
+*.db
+*.db-journal
+.env
+.env.local
+coverage/
+.vite/
+.claude/
+
+# Session data
+session.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

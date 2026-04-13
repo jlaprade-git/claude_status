@@ -1,0 +1,22 @@
+{
+  "name": "claude-status",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "npm run dev -w apps/desktop",
+    "build": "npm run build -w packages/core && npm run build -w apps/desktop",
+    "build:core": "npm run build -w packages/core",
+    "test": "npm run test -w packages/core",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.3.0"
+  }
+}
