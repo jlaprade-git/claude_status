@@ -2,13 +2,11 @@
 
 > A lightweight menu bar app that tracks your Claude Code subscription limits, token usage, cost estimates, and Claude service health — all from your system tray.
 
-> **Fork note:** This fork replaces `better-sqlite3` (native C++ addon) with [`sql.js`](https://github.com/sql-js/sql.js) (pure JavaScript/WASM). This eliminates the need for native compilation tooling (node-gyp, C++ build tools) and avoids install failures on newer environments. See [What Changed in This Fork](#what-changed-in-this-fork) for details.
-
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-12%2B-black?logo=apple" alt="macOS" />
   <img src="https://img.shields.io/badge/Windows-10%2B-0078D6?logo=windows" alt="Windows" />
   <img src="https://img.shields.io/badge/Linux-Ubuntu%2022.04%2B-E95420?logo=ubuntu" alt="Linux" />
-  <img src="https://img.shields.io/badge/Electron-41-47848F?logo=electron" alt="Electron" />
+  <img src="https://img.shields.io/badge/Electron-33-47848F?logo=electron" alt="Electron" />
   <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
 </p>
@@ -85,7 +83,7 @@ Stop wasting time when Claude is down. Get notified the moment something breaks 
 brew install node
 
 # Clone and run
-git clone https://github.com/jlaprade-git/claude_status.git
+git clone https://github.com/enescingoz/claude_status.git
 cd claude_status
 npm install
 npm run dev
@@ -99,7 +97,7 @@ The app appears in your **menu bar** (top-right area). Click the icon to open th
 # Install Node.js from https://nodejs.org (LTS recommended)
 
 # Clone and run
-git clone https://github.com/jlaprade-git/claude_status.git
+git clone https://github.com/enescingoz/claude_status.git
 cd claude_status
 npm install
 npm run dev
@@ -115,7 +113,7 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 # Clone and run
-git clone https://github.com/jlaprade-git/claude_status.git
+git clone https://github.com/enescingoz/claude_status.git
 cd claude_status
 npm install
 npm run dev
@@ -170,10 +168,10 @@ Costs are estimated from token counts using a local pricing engine with per-mode
 
 | Layer | Technology |
 |---|---|
-| App shell | [Electron](https://electronjs.org) 41 |
+| App shell | [Electron](https://electronjs.org) 33 |
 | UI | [React](https://react.dev) 19 + TypeScript 5.5 |
 | Build tool | [electron-vite](https://electron-vite.org) |
-| Local storage | [sql.js](https://github.com/sql-js/sql.js) (SQLite via WASM) |
+| Local storage | [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) |
 | Monorepo | npm workspaces |
 
 ---
@@ -218,27 +216,6 @@ Claude Status is designed to keep your data local:
 - **Session key stored locally** — saved in Electron's sandboxed app data directory, never shared with third parties
 - **Read-only access** — the app reads `~/.claude/` but never writes to it
 - **Minimal network requests** — only connects to `claude.ai` (your own account) and the Claude status page
-
----
-
-## What Changed in This Fork
-
-This fork replaces `better-sqlite3` with `sql.js` to remove the native compilation dependency. The original repo uses `better-sqlite3` which requires `node-gyp` and a C++ compiler to build. While this works for most setups, `sql.js` eliminates that requirement entirely — it's pure JavaScript/WASM and installs cleanly everywhere with no build tools needed.
-
-### Changes
-
-| File | Change |
-|---|---|
-| `apps/desktop/src/modules/settings/database.ts` | Rewritten to use sql.js. `DatabaseManager` now uses a static async `create()` factory method instead of a sync constructor (WASM initialization is async). Database auto-saves to disk every 30 seconds. |
-| `apps/desktop/src/main/index.ts` | Updated to use async `DatabaseManager.create()` with fallback to no-persistence mode on failure. |
-| `apps/desktop/electron.vite.config.ts` | Added Vite plugin to copy `sql-wasm.wasm` to build output. |
-| `apps/desktop/package.json` | Replaced `better-sqlite3` with `sql.js`, removed `electron-rebuild` and `@types/better-sqlite3`, bumped Electron 33 to 41. |
-| `package.json` | Updated ESLint 8 to 9, `@typescript-eslint/*` 7 to 8. |
-
-### Tradeoffs
-
-- **sql.js is slightly slower** than better-sqlite3 for heavy workloads (WASM vs native C). For a usage tracker doing simple inserts and reads, this is negligible.
-- **Database is in-memory with periodic file saves** (every 30s + on close) rather than direct file I/O. Up to 30s of data could be lost on a hard crash, but the app re-scans log files on startup anyway.
 
 ---
 
