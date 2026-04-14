@@ -51,22 +51,25 @@ function initialize(): void {
     app.dock?.hide()
   }
 
-  // Initialize database
-  let db: DatabaseManager | null = null
-  try {
-    db = new DatabaseManager()
+  // Initialize database and usage collector
+  DatabaseManager.create().then((db) => {
     console.log('[main] Database initialized')
-  } catch (err) {
-    console.error('[main] Database init failed, continuing without persistence:', err)
-  }
 
-  // Initialize usage collector
-  const usageCollector = new UsageCollector(db)
-  setUsageCollector(usageCollector)
-  usageCollector.initialize().then(() => {
-    usageCollector.startPolling(30_000)
-    console.log('[main] Usage collector started')
-  }).catch(err => console.error('[main] Usage collector failed:', err))
+    const usageCollector = new UsageCollector(db)
+    setUsageCollector(usageCollector)
+    return usageCollector.initialize().then(() => {
+      usageCollector.startPolling(30_000)
+      console.log('[main] Usage collector started')
+    })
+  }).catch(err => {
+    console.error('[main] Database/usage init failed, continuing without persistence:', err)
+    const usageCollector = new UsageCollector(null)
+    setUsageCollector(usageCollector)
+    usageCollector.initialize().then(() => {
+      usageCollector.startPolling(30_000)
+      console.log('[main] Usage collector started (no persistence)')
+    }).catch(e => console.error('[main] Usage collector failed:', e))
+  })
 
   // Initialize pricing module
   const pricingModule = new PricingModule()

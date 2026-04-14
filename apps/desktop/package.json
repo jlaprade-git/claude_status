@@ -6,22 +6,19 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "postinstall": "electron-rebuild"
+    "preview": "electron-vite preview"
   },
   "dependencies": {
     "@claude-status/core": "*",
-    "better-sqlite3": "^11.0.0",
+    "sql.js": "^1.12.0",
     "electron-updater": "^6.0.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.2.0",
-    "electron": "^33.0.0",
+    "electron": "^41.0.0",
     "electron-builder": "^25.0.0",
-    "electron-rebuild": "^3.2.0",
     "electron-vite": "^3.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

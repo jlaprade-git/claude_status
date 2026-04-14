@@ -1,20 +1,55 @@
-import Database from 'better-sqlite3'
+import initSqlJs, { type Database } from 'sql.js'
 import { app } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 
 export class DatabaseManager {
-  private db: Database.Database
+  private db: Database
+  private dbPath: string
+  private saveTimer: ReturnType<typeof setInterval> | null = null
 
-  constructor(dbPath?: string) {
+  private constructor(db: Database, dbPath: string) {
+    this.db = db
+    this.dbPath = dbPath
+  }
+
+  static async create(dbPath?: string): Promise<DatabaseManager> {
     const path = dbPath ?? join(app.getPath('userData'), 'claude-status.db')
-    this.db = new Database(path)
-    this.db.pragma('journal_mode = WAL')
-    this.db.pragma('foreign_keys = ON')
-    this.initialize()
+
+    // Ensure directory exists
+    const dir = dirname(path)
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true })
+    }
+
+    // Locate WASM file next to the main process bundle
+    const wasmPath = join(__dirname, 'sql-wasm.wasm')
+    const SQL = await initSqlJs({
+      locateFile: () => wasmPath,
+    })
+
+    let db: Database
+    if (existsSync(path)) {
+      const buffer = readFileSync(path)
+      db = new SQL.Database(buffer)
+    } else {
+      db = new SQL.Database()
+    }
+
+    db.run('PRAGMA journal_mode = WAL')
+    db.run('PRAGMA foreign_keys = ON')
+
+    const manager = new DatabaseManager(db, path)
+    manager.initialize()
+
+    // Auto-save every 30 seconds
+    manager.saveTimer = setInterval(() => manager.save(), 30_000)
+
+    return manager
   }
 
   private initialize(): void {
-    this.db.exec(`
+    this.db.run(`
       CREATE TABLE IF NOT EXISTS schema_version (
         version INTEGER PRIMARY KEY,
         applied_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -77,14 +112,11 @@ export class DatabaseManager {
     `)
 
     // Record initial schema version
-    const versionRow = this.db.prepare('SELECT MAX(version) as v FROM schema_version').get() as { v: number | null } | undefined
-    if (!versionRow?.v) {
-      this.db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(1)
+    const rows = this.db.exec('SELECT MAX(version) as v FROM schema_version')
+    const version = rows.length > 0 && rows[0].values.length > 0 ? rows[0].values[0][0] : null
+    if (!version) {
+      this.db.run('INSERT INTO schema_version (version) VALUES (?)', [1])
     }
-  }
-
-  getDb(): Database.Database {
-    return this.db
   }
 
   // Usage records
@@ -102,14 +134,12 @@ export class DatabaseManager {
     source: string
     confidence: string
   }): void {
-    this.db
-      .prepare(
-        `INSERT OR IGNORE INTO usage_records
-         (timestamp, project_name, session_id, model, input_tokens, output_tokens,
-          cache_write_tokens, cache_read_tokens, total_tokens, estimated_cost_usd, source, confidence)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
+    this.db.run(
+      `INSERT OR IGNORE INTO usage_records
+       (timestamp, project_name, session_id, model, input_tokens, output_tokens,
+        cache_write_tokens, cache_read_tokens, total_tokens, estimated_cost_usd, source, confidence)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
         record.timestamp,
         record.projectName,
         record.sessionId ?? null,
@@ -122,37 +152,57 @@ export class DatabaseManager {
         record.estimatedCostUsd ?? null,
         record.source,
         record.confidence,
-      )
+      ],
+    )
   }
 
   getUsageRecordsSince(since: string): Array<Record<string, unknown>> {
-    return this.db
-      .prepare('SELECT * FROM usage_records WHERE timestamp >= ? ORDER BY timestamp DESC')
-      .all(since) as Array<Record<string, unknown>>
+    const stmt = this.db.prepare('SELECT * FROM usage_records WHERE timestamp >= ? ORDER BY timestamp DESC')
+    stmt.bind([since])
+    const results: Array<Record<string, unknown>> = []
+    while (stmt.step()) {
+      results.push(stmt.getAsObject())
+    }
+    stmt.free()
+    return results
   }
 
   // Settings
   getSetting(key: string): string | undefined {
-    const row = this.db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined
-    return row?.value
+    const rows = this.db.exec('SELECT value FROM settings WHERE key = ?', [key])
+    if (rows.length > 0 && rows[0].values.length > 0) {
+      return rows[0].values[0][0] as string
+    }
+    return undefined
   }
 
   setSetting(key: string, value: string): void {
-    this.db
-      .prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
-      .run(key, value)
+    this.db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value])
   }
 
   // Notification log
   logNotification(type: string, title: string, body?: string, incidentId?: string): void {
-    this.db
-      .prepare(
-        'INSERT INTO notification_log (type, title, body, incident_id) VALUES (?, ?, ?, ?)',
-      )
-      .run(type, title, body ?? null, incidentId ?? null)
+    this.db.run(
+      'INSERT INTO notification_log (type, title, body, incident_id) VALUES (?, ?, ?, ?)',
+      [type, title, body ?? null, incidentId ?? null],
+    )
+  }
+
+  private save(): void {
+    try {
+      const data = this.db.export()
+      writeFileSync(this.dbPath, Buffer.from(data))
+    } catch (err) {
+      console.error('[DatabaseManager] Failed to save database:', err)
+    }
   }
 
   close(): void {
+    if (this.saveTimer) {
+      clearInterval(this.saveTimer)
+      this.saveTimer = null
+    }
+    this.save()
     this.db.close()
   }
 }
