@@ -115,6 +115,7 @@ export class ClaudeApiClient {
       sevenDayOpus: data.seven_day_opus ? mapWindow(data.seven_day_opus) : undefined,
       sevenDaySonnet: data.seven_day_sonnet ? mapWindow(data.seven_day_sonnet) : undefined,
       sevenDayOauthApps: data.seven_day_oauth_apps ? mapWindow(data.seven_day_oauth_apps) : undefined,
+      modelLimits: [],
       fetchedAt: new Date().toISOString(),
     }
   }

@@ -1,4 +1,4 @@
-import type { SubscriptionUsage, ExtraUsage, SubscriptionState, UsageWindow } from '@claude-status/core'
+import type { SubscriptionUsage, ExtraUsage, SubscriptionState, UsageWindow, ModelUsageWindow } from '@claude-status/core'
 import { AuthManager } from '../auth/index'
 import { BrowserFetcher } from './browser-fetcher'
 
@@ -151,16 +151,34 @@ export class SubscriptionManager {
         resetsAt: raw?.resets_at ?? '',
       })
 
+      // Dynamically discover per-model seven_day_* fields
+      const skipKeys = new Set(['five_hour', 'seven_day', 'seven_day_oauth_apps', 'extra_usage'])
+      const modelLimits: ModelUsageWindow[] = []
+      for (const [key, value] of Object.entries(rawUsage)) {
+        if (skipKeys.has(key)) continue
+        if (!key.startsWith('seven_day_')) continue
+        if (!value || typeof value !== 'object') continue
+        const raw = value as { utilization: number; resets_at: string | null }
+        // Skip models with no useful data (0% and no reset time)
+        if (!raw.utilization && !raw.resets_at) continue
+        const label = key.replace('seven_day_', '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        modelLimits.push({
+          ...mapWindow(raw),
+          label,
+        })
+      }
+
       this.usage = {
         fiveHour: mapWindow(rawUsage.five_hour),
         sevenDay: mapWindow(rawUsage.seven_day),
         sevenDayOpus: rawUsage.seven_day_opus ? mapWindow(rawUsage.seven_day_opus) : undefined,
         sevenDaySonnet: rawUsage.seven_day_sonnet ? mapWindow(rawUsage.seven_day_sonnet) : undefined,
         sevenDayOauthApps: rawUsage.seven_day_oauth_apps ? mapWindow(rawUsage.seven_day_oauth_apps) : undefined,
+        modelLimits,
         fetchedAt: new Date().toISOString(),
       }
 
-      console.log(`[SubscriptionManager] Usage: 5h=${this.usage.fiveHour.utilization}%, 7d=${this.usage.sevenDay.utilization}%`)
+      console.log(`[SubscriptionManager] Usage: 5h=${this.usage.fiveHour.utilization}%, 7d=${this.usage.sevenDay.utilization}%${modelLimits.length ? ', models=' + modelLimits.map(m => `${m.label}:${m.utilization}%`).join(', ') : ''}`)
 
       try {
         const rawExtra = await this.fetcher.fetchJson(

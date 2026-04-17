@@ -394,6 +394,14 @@ const styles = {
   } as React.CSSProperties,
 }
 
+const MODEL_COLORS: Record<string, string> = {
+  opus: '#8b5cf6',
+  sonnet: '#3b82f6',
+  haiku: '#10b981',
+  cowork: '#f59e0b',
+  omelette: '#ef4444',
+}
+
 /* ─── Limit Card Component ─── */
 const UsageBar: FC<{
   label: string
@@ -533,7 +541,8 @@ export const SubscriptionPanel: FC<SubscriptionPanelProps> = ({
 
   /* ─── Authenticated: Rich card layout ─── */
   const { usage, extraUsage } = state
-  const hasModelLimits = usage && (usage.sevenDayOpus || usage.sevenDaySonnet)
+  const modelLimits = usage?.modelLimits ?? []
+  const hasModelLimits = modelLimits.length > 0
 
   return (
     <div style={styles.wrapper}>
@@ -619,32 +628,20 @@ export const SubscriptionPanel: FC<SubscriptionPanelProps> = ({
         <div style={styles.modelSection}>
           <div style={styles.sectionTitle}>By Model</div>
           <div style={styles.modelList}>
-            {usage.sevenDayOpus && (
+            {modelLimits.map((m) => (
               <UsageBar
-                label="Opus"
-                utilization={usage.sevenDayOpus.utilization}
-                resetsAt={usage.sevenDayOpus.resetsAt}
+                key={m.label}
+                label={m.label}
+                utilization={m.utilization}
+                resetsAt={m.resetsAt}
                 cardStyle={styles.modelCard}
                 barHeight={6}
                 labelSize="12px"
                 pctSize="13px"
                 resetStyle={styles.modelReset}
-                dotColor="#8b5cf6"
+                dotColor={MODEL_COLORS[m.label.toLowerCase()] ?? '#6b7280'}
               />
-            )}
-            {usage.sevenDaySonnet && (
-              <UsageBar
-                label="Sonnet"
-                utilization={usage.sevenDaySonnet.utilization}
-                resetsAt={usage.sevenDaySonnet.resetsAt}
-                cardStyle={styles.modelCard}
-                barHeight={6}
-                labelSize="12px"
-                pctSize="13px"
-                resetStyle={styles.modelReset}
-                dotColor="#3b82f6"
-              />
-            )}
+            ))}
           </div>
         </div>
       )}

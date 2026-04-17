@@ -51,7 +51,7 @@ export class UsageParser {
           outputTokens,
           cacheWriteTokens,
           cacheReadTokens,
-          totalTokens: inputTokens + outputTokens + cacheWriteTokens + cacheReadTokens,
+          totalTokens: inputTokens + outputTokens,
           estimatedCostUsd: undefined, // Will be calculated by PricingCalculator
           source: 'local-file',
           confidence: 'high',

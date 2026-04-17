@@ -7,14 +7,20 @@ export class ClaudeStatusModule {
   private latestHealth: ServiceHealth | null = null
 
   constructor() {
-    // Use Node's built-in fetch as the adapter
+    // Use Node's built-in fetch as the adapter, with a timeout
     this.client = new ClaudeStatusClient({
       fetch: async (url: string) => {
-        const response = await fetch(url)
-        return {
-          ok: response.ok,
-          status: response.status,
-          json: () => response.json(),
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 10_000)
+        try {
+          const response = await fetch(url, { signal: controller.signal })
+          return {
+            ok: response.ok,
+            status: response.status,
+            json: () => response.json(),
+          }
+        } finally {
+          clearTimeout(timeout)
         }
       },
     })

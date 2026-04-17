@@ -11,12 +11,17 @@ export interface UsageWindow {
   resetsAt: string
 }
 
+export interface ModelUsageWindow extends UsageWindow {
+  label: string
+}
+
 export interface SubscriptionUsage {
   fiveHour: UsageWindow
   sevenDay: UsageWindow
   sevenDayOpus?: UsageWindow
   sevenDaySonnet?: UsageWindow
   sevenDayOauthApps?: UsageWindow
+  modelLimits: ModelUsageWindow[]
   fetchedAt: string
 }
 

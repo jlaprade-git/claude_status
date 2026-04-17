@@ -57,6 +57,9 @@ function initialize(): void {
 
     const usageCollector = new UsageCollector(db)
     setUsageCollector(usageCollector)
+    usageCollector.onChange((summary) => {
+      popupWindow.send('usage:updated', summary)
+    })
     return usageCollector.initialize().then(() => {
       usageCollector.startPolling(30_000)
       console.log('[main] Usage collector started')
@@ -65,6 +68,9 @@ function initialize(): void {
     console.error('[main] Database/usage init failed, continuing without persistence:', err)
     const usageCollector = new UsageCollector(null)
     setUsageCollector(usageCollector)
+    usageCollector.onChange((summary) => {
+      popupWindow.send('usage:updated', summary)
+    })
     usageCollector.initialize().then(() => {
       usageCollector.startPolling(30_000)
       console.log('[main] Usage collector started (no persistence)')

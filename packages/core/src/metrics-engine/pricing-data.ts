@@ -29,6 +29,15 @@ export const PRICING_DATA: PricingTier[] = [
     effectiveDate: '2025-05-01',
   },
   {
+    model: 'claude-opus-4-5-20251101',
+    displayName: 'Claude Opus 4.5',
+    inputTokensPer1M: 15.0,
+    outputTokensPer1M: 75.0,
+    cacheWritePer1M: 18.75,
+    cacheReadPer1M: 1.5,
+    effectiveDate: '2025-11-01',
+  },
+  {
     model: 'claude-sonnet-4-5-20250514',
     displayName: 'Claude Sonnet 4.5',
     inputTokensPer1M: 3.0,
