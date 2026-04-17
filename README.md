@@ -28,7 +28,7 @@
 Claude Status sits in your menu bar and gives you instant answers to:
 
 - **"Am I about to hit my rate limit?"** — See your 5-hour session and weekly usage limits as color-coded progress bars with reset countdowns.
-- **"How much have I spent?"** — Token counts and cost estimates calculated from your local Claude Code session data using official Anthropic pricing.
+- **"What would my usage cost at API rates?"** — Token counts and cost estimates calculated from your local Claude Code session data using Anthropic's API pricing. This is an estimate of what your usage would cost on the API, not what you're actually paying on a subscription plan (Pro, Max, etc.).
 - **"Is Claude down right now?"** — Real-time service health monitoring with incident tracking and desktop notifications when outages are detected or resolved.
 
 ---
@@ -223,9 +223,13 @@ Claude Status is designed to keep your data local:
 
 ## What Changed in This Fork
 
-This fork replaces `better-sqlite3` with `sql.js` to remove the native compilation dependency. The original repo uses `better-sqlite3` which requires `node-gyp` and a C++ compiler to build. While this works for most setups, `sql.js` eliminates that requirement entirely — it's pure JavaScript/WASM and installs cleanly everywhere with no build tools needed.
+> **Note:** The original upstream repository this was forked from is no longer available. The author removed it for unknown reasons.
 
-### Changes
+This fork replaces `better-sqlite3` with `sql.js` to remove the native compilation dependency, and fixes several issues that prevented the app from working correctly as usage data grew.
+
+### sql.js Migration
+
+The original repo uses `better-sqlite3` which requires `node-gyp` and a C++ compiler to build. `sql.js` eliminates that requirement entirely — it's pure JavaScript/WASM and installs cleanly everywhere with no build tools needed.
 
 | File | Change |
 |---|---|
@@ -235,10 +239,24 @@ This fork replaces `better-sqlite3` with `sql.js` to remove the native compilati
 | `apps/desktop/package.json` | Replaced `better-sqlite3` with `sql.js`, removed `electron-rebuild` and `@types/better-sqlite3`, bumped Electron 33 to 41. |
 | `package.json` | Updated ESLint 8 to 9, `@typescript-eslint/*` 7 to 8. |
 
-### Tradeoffs
+#### Tradeoffs
 
 - **sql.js is slightly slower** than better-sqlite3 for heavy workloads (WASM vs native C). For a usage tracker doing simple inserts and reads, this is negligible.
 - **Database is in-memory with periodic file saves** (every 30s + on close) rather than direct file I/O. Up to 30s of data could be lost on a hard crash, but the app re-scans log files on startup anyway.
+
+### Bug Fixes
+
+**Usage data never reached the renderer (all zeros).** The main process collected usage data but never emitted `usage:updated` events to the popup window. The renderer only fetched once at startup, racing against async database/scanner initialization — if the scanner wasn't ready yet, the UI got zeros and was never updated. Fixed by adding an `onChange` callback to `UsageCollector` and wiring it up to push data to the renderer after every scan.
+
+**Status tab could hang indefinitely.** The fetch to `status.anthropic.com` had no timeout. On networks where the request hangs (corporate firewalls, proxies), the IPC handler would never resolve, leaving the status tab stuck. Fixed by adding a 10-second `AbortController` timeout to the fetch adapter.
+
+**JSONL scanner re-read all files every 30 seconds.** As usage history grew (294 files, 150MB+), the scanner became a bottleneck — re-reading and re-parsing everything on every poll cycle. Fixed by caching parsed results per file using `stat()` size and mtime, so only new or modified files are re-read.
+
+**Token counts were inflated ~10x.** `totalTokens` included cache read and cache write tokens, which don't count against plan limits and massively inflate the displayed number. Fixed to only count input + output tokens. Cache tokens are still tracked separately for cost calculations at their respective rates.
+
+**Per-model limits were hardcoded to Opus/Sonnet.** The Limits tab only checked for `seven_day_opus` and `seven_day_sonnet` fields from the API. If the API returned `null` for a model (as it does for Opus), it was silently dropped. Fixed to dynamically discover all `seven_day_*` model fields and only display models that have actual data.
+
+**Added pricing for claude-opus-4-5-20251101.** Explicit pricing tier added so cost calculations don't rely on fuzzy model name matching.
 
 ---
 
