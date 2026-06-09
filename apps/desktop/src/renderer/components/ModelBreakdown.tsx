@@ -87,6 +87,7 @@ const styles = {
 }
 
 const modelColors: Record<string, string> = {
+  fable: '#f59e0b',
   opus: '#8b5cf6',
   sonnet: '#3b82f6',
   haiku: '#22c55e',
@@ -106,6 +107,7 @@ function formatTokens(n: number): string {
 }
 
 function shortModelName(model: string): string {
+  if (model.includes('fable')) return 'Fable'
   if (model.includes('opus')) return 'Opus'
   if (model.includes('sonnet')) return 'Sonnet'
   if (model.includes('haiku')) return 'Haiku'

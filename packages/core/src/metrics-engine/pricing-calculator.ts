@@ -83,6 +83,7 @@ export class PricingCalculator {
     if (tier) return tier
 
     // Fuzzy match by model family
+    if (model.includes('fable')) return this.pricingTiers.find((t) => t.model.includes('fable'))
     if (model.includes('opus')) return this.pricingTiers.find((t) => t.model.includes('opus'))
     if (model.includes('sonnet')) return this.pricingTiers.find((t) => t.model.includes('sonnet'))
     if (model.includes('haiku')) return this.pricingTiers.find((t) => t.model.includes('haiku'))
